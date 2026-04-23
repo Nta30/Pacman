@@ -1,50 +1,48 @@
 package main;
 
 import java.awt.*;
-import java.io.InputStream;
 
 public class UI {
 
     GamePanel gp;
     Graphics2D g2d;
-    Font gameFont;
+    Font titleFont;
+    Font buttonFont;
+    Font smallFont;
     public int commandNumber = 0;
     public int settingRow = 0;
+    public int settingButtonPos = 0;
     public boolean showInstructions = false;
 
-    // CatWomen theme colors
-    static final Color BG_DARK      = new Color(10, 10, 50);
-    static final Color BG_BLUE      = new Color(40, 40, 180);
-    static final Color GOLD         = new Color(200, 180, 100);
-    static final Color GOLD_BRIGHT  = new Color(240, 220, 130);
-    static final Color GOLD_DIM     = new Color(150, 130, 70);
-    static final Color BUTTON_BG    = new Color(230, 210, 100);
-    static final Color BUTTON_SEL   = new Color(255, 240, 140);
-    static final Color BUTTON_TEXT  = new Color(40, 30, 10);
-    static final Color PANEL_BG     = new Color(60, 80, 180, 200);
-    static final Color PANEL_BORDER = new Color(180, 160, 255, 180);
-    static final Color CAT_ORANGE   = new Color(255, 165, 0);
-    static final Color GHOST_RED    = Color.RED;
-    static final Color GHOST_PINK   = new Color(255, 184, 255);
-    static final Color GHOST_CYAN   = new Color(0, 255, 255);
+    // Colors
+    static final Color BG_GRADIENT_TOP = new Color(20, 20, 60);
+    static final Color BG_GRADIENT_BOTTOM = new Color(60, 40, 120);
+    static final Color BUTTON_NORMAL = new Color(50, 50, 80, 220);
+    static final Color BUTTON_HOVER = new Color(255, 200, 100);
+    static final Color BUTTON_TEXT_NORMAL = new Color(200, 200, 220);
+    static final Color BUTTON_TEXT_HOVER = new Color(30, 30, 50);
+    static final Color PANEL_BG = new Color(0, 0, 0, 180);
+    static final Color TITLE_COLOR = new Color(255, 220, 100);
+    static final Color SCORE_COLOR = new Color(255, 180, 80);
+
+    static final Color GHOST_RED = new Color(255, 0, 0);
+    static final Color GHOST_PINK = new Color(255, 184, 255);
+    static final Color GHOST_CYAN = new Color(0, 255, 255);
     static final Color GHOST_ORANGE = new Color(255, 184, 82);
+    static final Color CAT_ORANGE = new Color(255, 165, 0);
 
     public UI(GamePanel gp) {
         this.gp = gp;
-        try {
-            InputStream is = getClass().getResourceAsStream("/font/x12y16pxMaruMonica.ttf");
-            if (is != null) gameFont = Font.createFont(Font.TRUETYPE_FONT, is).deriveFont(20f);
-            else            gameFont = new Font("Monospaced", Font.BOLD, 20);
-        } catch (Exception e) {
-            gameFont = new Font("Monospaced", Font.BOLD, 20);
-        }
+        titleFont = new Font("Arial", Font.BOLD, 42);
+        buttonFont = new Font("Arial", Font.BOLD, 18);
+        smallFont = new Font("Arial", Font.PLAIN, 12);
     }
 
     public void draw(Graphics2D g2d) {
         this.g2d = g2d;
         switch (gp.gameState) {
-            case 0: drawTitleScreen();   break; // titleState
-            case 1: drawSettingScreen(); break; // settingState
+            case 0: drawTitleScreen();   break;
+            case 1: drawSettingScreen(); break;
             case 2: drawHUD(); drawReady();    break;
             case 3: drawHUD();                 break;
             case 4: drawHUD(); drawPause();    break;
@@ -53,13 +51,97 @@ public class UI {
         }
     }
 
-    // ==================== BACKGROUNDS ====================
-
     private void drawGradientBG() {
-        GradientPaint gp2 = new GradientPaint(0, 0, BG_DARK,
-                gp.screenWidth, gp.screenHeight, BG_BLUE);
-        g2d.setPaint(gp2);
+        GradientPaint gradient = new GradientPaint(0, 0, BG_GRADIENT_TOP,
+                gp.screenWidth, gp.screenHeight, BG_GRADIENT_BOTTOM);
+        g2d.setPaint(gradient);
         g2d.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
+    }
+
+    // ==================== SOUND BUTTONS (GÓC PHẢI DƯỚI) ====================
+
+    /**
+     * Vẽ nút điều khiển âm thanh ở góc phải dưới màn hình
+     * @param x - tọa độ x
+     * @param y - tọa độ y
+     */
+    public boolean musicOn = true;
+    public boolean sfxOn = true;
+    private void drawSoundButtons(int x, int y) {
+        int btnSize = 35;
+
+        // Khung nền mờ cho 2 nút
+        g2d.setColor(new Color(0, 0, 0, 150));
+        g2d.fillRoundRect(x - 5, y - 5, 95, 50, 15, 15);
+
+        // Nút Music (bên trái) - Dùng ký tự nốt nhạc
+        g2d.setColor(gp.musicOn ? BUTTON_HOVER : BUTTON_NORMAL);
+        g2d.fillRoundRect(x, y, btnSize, btnSize, 10, 10);
+        g2d.setColor(gp.musicOn ? BUTTON_TEXT_HOVER : BUTTON_TEXT_NORMAL);
+        g2d.setFont(buttonFont.deriveFont(18f));
+        g2d.drawString("♪", x + 13, y + 25);
+
+        // Nút SFX (bên phải) - TỰ VẼ HÌNH LOA
+        g2d.setColor(gp.sfxOn ? BUTTON_HOVER : BUTTON_NORMAL);
+        g2d.fillRoundRect(x + 48, y, btnSize, btnSize, 10, 10);
+
+        // Vẽ hình loa bằng Graphics2D (màu sẽ thay đổi theo trạng thái bật/tắt)
+        drawSpeakerIcon(x + 62, y + 17, 14, gp.sfxOn);
+
+        // Nhãn chú thích phía dưới nút
+        g2d.setFont(smallFont);
+        g2d.setColor(new Color(180, 180, 180));
+        g2d.drawString("MUSIC", x + 8, y + 52);
+        g2d.drawString("SFX", x + 56, y + 52);
+    }
+
+    /**
+     * Vẽ biểu tượng loa (speaker icon)
+     * @param centerX - tọa độ X trung tâm
+     * @param centerY - tọa độ Y trung tâm
+     * @param size - kích thước
+     * @param on - trạng thái bật/tắt (true: màu đen, false: màu xám mờ)
+     */
+    private void drawSpeakerIcon(int centerX, int centerY, int size, boolean on) {
+        // Màu sắc dựa trên trạng thái
+        Color iconColor = on ? BUTTON_TEXT_HOVER : new Color(100, 100, 100);
+        g2d.setColor(iconColor);
+        g2d.setStroke(new BasicStroke(2));
+
+        int w = size;
+        int h = size;
+
+        // Vẽ thân loa (hình thang - phần thân)
+        int[] bodyX = {centerX - w/3, centerX - w/3, centerX - w/6, centerX - w/6};
+        int[] bodyY = {centerY - h/3, centerY + h/3, centerY + h/4, centerY - h/4};
+        g2d.fillPolygon(bodyX, bodyY, 4);
+
+        // Vẽ màng loa (hình elip - phần loa tròn)
+        g2d.fillOval(centerX - w/6, centerY - h/4, w/3, h/2);
+
+        // Vẽ sóng âm (các đường cong bên phải)
+        if (on) {
+            // Sóng âm khi bật - 3 đường cong
+            g2d.setStroke(new BasicStroke(1.5f));
+
+            // Sóng thứ nhất
+            g2d.drawArc(centerX + w/6, centerY - h/3, w/3, h*2/3, -60, 120);
+            // Sóng thứ hai
+            g2d.drawArc(centerX + w/3, centerY - h/2, w/3, h, -60, 120);
+            // Sóng thứ ba
+            g2d.drawArc(centerX + w/2, centerY - h*2/3, w/3, h*4/3, -60, 120);
+        } else {
+            // Khi tắt - vẽ dấu X (gạch chéo)
+            g2d.setStroke(new BasicStroke(2));
+            int x1 = centerX - w/4;
+            int y1 = centerY - h/3;
+            int x2 = centerX + w/3;
+            int y2 = centerY + h/3;
+            g2d.drawLine(x1, y1, x2, y2);
+            g2d.drawLine(x2, y1, x1, y2);
+        }
+
+        g2d.setStroke(new BasicStroke(1));
     }
 
     // ==================== TITLE SCREEN ====================
@@ -72,104 +154,106 @@ public class UI {
             return;
         }
 
-        // Title "CatWomen"
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 52f));
+        // Title "Pacman" nhỏ phía trên
+        g2d.setFont(smallFont.deriveFont(Font.BOLD, 14f));
+        g2d.setColor(new Color(150, 150, 180));
+        String pacman = "Pacman";
+        g2d.drawString(pacman, centerX(pacman), 50);
+
+        // Title "CatWomen" lớn
+        g2d.setFont(titleFont);
+        g2d.setColor(TITLE_COLOR);
         String title = "CatWomen";
         int titleX = centerX(title);
-        // Shadow
-        g2d.setColor(new Color(60, 40, 120));
-        g2d.drawString(title, titleX + 3, 83);
-        // Main
-        GradientPaint titleGrad = new GradientPaint(titleX, 50, new Color(100, 80, 200),
-                titleX + 300, 80, new Color(180, 120, 220));
-        g2d.setPaint(titleGrad);
-        g2d.drawString(title, titleX, 80);
+        g2d.setColor(new Color(80, 60, 40));
+        g2d.drawString(title, titleX + 3, 105);
+        g2d.setColor(TITLE_COLOR);
+        g2d.drawString(title, titleX, 100);
 
-        // Ghost sprites (left side)
-        Color[] gColors = {GHOST_ORANGE, GHOST_CYAN, GHOST_RED, GHOST_PINK};
-        int[][] gPos = {{50, 130}, {120, 170}, {40, 230}, {100, 280}};
-        for (int i = 0; i < 4; i++) {
-            drawGhostSprite(gPos[i][0], gPos[i][1], 40, gColors[i]);
-        }
+        // Ghost sprites bên trái
+        drawGhostSprite(60, 140, 50, GHOST_RED);
+        drawGhostSprite(120, 200, 50, GHOST_PINK);
+        drawGhostSprite(50, 260, 50, GHOST_CYAN);
+        drawGhostSprite(110, 320, 50, GHOST_ORANGE);
 
-        // Cat character (right side)
-        drawCatCharacter(gp.screenWidth - 160, 120, 120);
+        // Cat character bên phải
+        drawCatCharacter(gp.screenWidth - 150, 150, 110);
 
-        // Buttons
-        int btnW = 280, btnH = 48;
+        // Các nút chính
+        int btnW = 220, btnH = 45;
         int btnX = gp.screenWidth / 2 - btnW / 2;
-        int startY = 390;
-        String[] labels = {"Start", "How To Play", "Exit"};
+        int startY = 380;
+        String[] labels = {"START", "HOW TO PLAY", "EXIT"};
 
         for (int i = 0; i < 3; i++) {
-            int by = startY + i * 65;
+            int by = startY + i * 60;
             boolean selected = (commandNumber == i);
             drawButton(btnX, by, btnW, btnH, labels[i], selected);
         }
 
-        // Controls hint
-        g2d.setFont(gameFont.deriveFont(12f));
+        // Nút âm thanh ở góc phải dưới
+        drawSoundButtons(gp.screenWidth - 100, gp.screenHeight - 70);
+
+        // Hướng dẫn điều khiển
+        g2d.setFont(smallFont);
         g2d.setColor(new Color(150, 150, 180));
-        String hint = "Arrow Keys / WASD   Enter to Select";
-        g2d.drawString(hint, centerX(hint), gp.screenHeight - 20);
+        String hint = "↑/↓: Select   Enter: Confirm   M: Music   S: SFX";
+        g2d.drawString(hint, centerX(hint), gp.screenHeight - 30);
     }
 
     private void drawInstructions() {
         drawGradientBG();
 
-        // Panel
-        int px = 40, py = 30, pw = gp.screenWidth - 80, ph = gp.screenHeight - 60;
+        int px = 50, py = 50, pw = gp.screenWidth - 100, ph = gp.screenHeight - 100;
         drawPanel(px, py, pw, ph);
 
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 28f));
-        g2d.setColor(GOLD_BRIGHT);
+        g2d.setFont(titleFont.deriveFont(28f));
+        g2d.setColor(TITLE_COLOR);
         String title = "HOW TO PLAY";
-        g2d.drawString(title, centerX(title), py + 50);
+        g2d.drawString(title, centerX(title), py + 55);
 
-        g2d.setFont(gameFont.deriveFont(16f));
+        g2d.setFont(buttonFont.deriveFont(14f));
         g2d.setColor(Color.WHITE);
-        int ly = py + 95;
-        int lx = px + 30;
-        int gap = 28;
+        int ly = py + 100;
+        int lx = px + 50;
+        int gap = 30;
 
         String[] lines = {
-            "--- 1 PLAYER MODE ---",
-            "Use Arrow Keys or WASD to move the Cat",
-            "Eat all dots to complete the level",
-            "Eat Power Pellets to chase ghosts",
-            "Avoid ghosts or you lose a life!",
-            "",
-            "--- 2 PLAYER MODE ---",
-            "Player 1 (Arrows): Control the Cat",
-            "Player 2 (WASD): Control the Red Ghost",
-            "",
-            "Cat wins by eating all dots",
-            "Ghost wins by catching the Cat",
-            "",
-            "--- CONTROLS ---",
-            "P / ESC : Pause",
-            "Enter   : Select",
-            "",
-            "--- DIFFICULTY ---",
-            "Easy: Slower ghosts, longer power-ups",
-            "Normal: Standard speed",
-            "Hard: Faster ghosts, shorter power-ups"
+                "USE ARROW KEYS OR WASD TO MOVE THE CAT",
+                "",
+                "EAT ALL DOTS TO COMPLETE THE LEVEL",
+                "EAT POWER PELLETS TO CHASE GHOSTS",
+                "AVOID GHOSTS OR YOU LOSE A LIFE!",
+                "",
+                "PRESS P OR ESC TO PAUSE THE GAME",
+                "",
+                "2 PLAYER MODE:",
+                "PLAYER 1 (ARROWS): CONTROL THE CAT",
+                "PLAYER 2 (WASD): CONTROL THE RED GHOST"
         };
 
         for (String line : lines) {
-            if (line.startsWith("---")) {
-                g2d.setColor(GOLD);
-                g2d.setFont(gameFont.deriveFont(Font.BOLD, 16f));
+            if (line.isEmpty()) {
+                ly += 10;
+                continue;
+            }
+            if (line.contains("2 PLAYER MODE")) {
+                g2d.setColor(TITLE_COLOR);
+                g2d.setFont(buttonFont.deriveFont(16f));
             } else {
                 g2d.setColor(new Color(220, 220, 240));
-                g2d.setFont(gameFont.deriveFont(15f));
+                g2d.setFont(buttonFont.deriveFont(13f));
             }
             g2d.drawString(line, lx, ly);
             ly += gap;
         }
 
-        // Back button
-        drawButton(gp.screenWidth / 2 - 80, gp.screenHeight - 70, 160, 40, "BACK", true);
+        int btnW = 140, btnH = 40;
+        int btnX = gp.screenWidth / 2 - btnW / 2;
+        drawButton(btnX, gp.screenHeight - 70, btnW, btnH, "BACK", true);
+
+        // Nút âm thanh ở góc phải dưới
+        drawSoundButtons(gp.screenWidth - 100, gp.screenHeight - 70);
     }
 
     // ==================== SETTINGS SCREEN ====================
@@ -177,159 +261,217 @@ public class UI {
     private void drawSettingScreen() {
         drawGradientBG();
 
-        int pw = 500, ph = 340;
+        int pw = 500, ph = 350;
         int px = gp.screenWidth / 2 - pw / 2;
-        int py = gp.screenHeight / 2 - ph / 2 - 30;
+        int py = gp.screenHeight / 2 - ph / 2 - 20;
         drawPanel(px, py, pw, ph);
 
-        // Title
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 30f));
-        g2d.setColor(GOLD_BRIGHT);
-        String title = "GAME SETTING";
-        g2d.drawString(title, centerX(title), py + 50);
+        g2d.setFont(titleFont.deriveFont(28f));
+        g2d.setColor(TITLE_COLOR);
+        String title = "GAME SETTINGS";
+        g2d.drawString(title, centerX(title), py + 45);
 
         int labelX = px + 40;
-        int optX = px + 200;
-        int rowY = py + 110;
-        int rowGap = 70;
+        int optX = px + 180;
+        int rowY = py + 95;
+        int rowGap = 60;
 
         // Row 0: PLAYER
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 20f));
-        g2d.setColor(settingRow == 0 ? GOLD_BRIGHT : GOLD_DIM);
+        g2d.setFont(buttonFont.deriveFont(16f));
+        g2d.setColor(settingRow == 0 ? TITLE_COLOR : Color.WHITE);
         g2d.drawString("PLAYER", labelX, rowY);
 
-        drawSettingOption(optX, rowY - 25, "1", !gp.twoPlayerMode, settingRow == 0);
-        drawSettingOption(optX + 80, rowY - 25, "2", gp.twoPlayerMode, settingRow == 0);
+        drawSmallButton(optX, rowY - 25, 55, 32, "1P", !gp.twoPlayerMode, settingRow == 0);
+        drawSmallButton(optX + 65, rowY - 25, 55, 32, "2P", gp.twoPlayerMode, settingRow == 0);
 
         // Row 1: DIFFICULTY
         rowY += rowGap;
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 20f));
-        g2d.setColor(settingRow == 1 ? GOLD_BRIGHT : GOLD_DIM);
+        g2d.setFont(buttonFont.deriveFont(16f));
+        g2d.setColor(settingRow == 1 ? TITLE_COLOR : Color.WHITE);
         g2d.drawString("DIFFICULTY", labelX, rowY);
 
         String[] diffs = {"EASY", "NORMAL", "HARD"};
         for (int i = 0; i < 3; i++) {
-            drawSettingOption(optX + i * 90, rowY - 25, diffs[i],
+            drawSmallButton(optX + i * 75, rowY - 25, 65, 32, diffs[i],
                     gp.difficulty == i, settingRow == 1);
         }
 
-        // Row 2: NEXT / BACK
-        rowY += rowGap + 10;
-        int bbw = 120, bbh = 40;
-        drawButton(px + 30, rowY - 10, bbw, bbh, "BACK", settingRow == 2);
-        drawButton(px + pw - bbw - 30, rowY - 10, bbw, bbh, "NEXT", settingRow == 2);
+        // Row 2: MAP
+        rowY += rowGap;
+        g2d.setFont(buttonFont.deriveFont(16f));
+        g2d.setColor(settingRow == 2 ? TITLE_COLOR : Color.WHITE);
+        g2d.drawString("MAP", labelX, rowY);
 
-        // Navigation hint
-        g2d.setFont(gameFont.deriveFont(12f));
+        for (int i = 0; i < 6; i++) {
+            drawSmallButton(optX + i * 48, rowY - 25, 40, 32,
+                    String.valueOf(i + 1),
+                    gp.selectedMap == i + 1,
+                    settingRow == 2);
+        }
+
+        // Row 3: BACK and START buttons
+        rowY += rowGap + 15;
+        int bbw = 120, bbh = 40;
+        int backX = px + 50;
+        int startX = px + pw - bbw - 50;
+
+        boolean isBackSelected = (settingRow == 3 && settingButtonPos == 0);
+        boolean isStartSelected = (settingRow == 3 && settingButtonPos == 1);
+
+        drawButton(backX, rowY - 10, bbw, bbh, "BACK", isBackSelected);
+        drawButton(startX, rowY - 10, bbw, bbh, "START", isStartSelected);
+
+        // Nút âm thanh ở góc phải dưới
+        drawSoundButtons(gp.screenWidth - 100, gp.screenHeight - 70);
+
+        g2d.setFont(smallFont);
         g2d.setColor(new Color(150, 150, 180));
-        String hint = "Up/Down: Navigate   Left/Right: Change   Enter: Confirm   Esc: Back";
-        g2d.drawString(hint, centerX(hint), gp.screenHeight - 20);
+        String hint = "↑/↓: Navigate   ←/→: Change   Enter: Confirm   ESC: Back";
+        g2d.drawString(hint, centerX(hint), gp.screenHeight - 30);
     }
 
-    private void drawSettingOption(int x, int y, String text, boolean active, boolean rowFocused) {
-        int w = 70, h = 32;
-        if (text.length() > 3) w = 80;
-
-        Color bg = active ? BUTTON_BG : new Color(160, 150, 120, 150);
-        Color border = (active && rowFocused) ? GOLD_BRIGHT : new Color(120, 110, 80);
-
+    /**
+     * Vẽ nút nhỏ cho các tùy chọn (Player, Difficulty, Map)
+     * @param x - tọa độ x
+     * @param y - tọa độ y
+     * @param w - chiều rộng
+     * @param h - chiều cao
+     * @param text - nội dung text
+     * @param active - trạng thái được chọn hay không
+     * @param rowFocused - hàng đang được focus
+     */
+    private void drawSmallButton(int x, int y, int w, int h, String text, boolean active, boolean rowFocused) {
+        Color bg = active ? BUTTON_HOVER : BUTTON_NORMAL;
         g2d.setColor(bg);
-        g2d.fillRoundRect(x, y, w, h, 15, 15);
-        g2d.setColor(border);
-        g2d.setStroke(new BasicStroke(active ? 2 : 1));
-        g2d.drawRoundRect(x, y, w, h, 15, 15);
-        g2d.setStroke(new BasicStroke(1));
+        g2d.fillRoundRect(x, y, w, h, 10, 10);
 
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 14f));
-        g2d.setColor(active ? BUTTON_TEXT : new Color(100, 90, 60));
+        if (active && rowFocused) {
+            g2d.setColor(TITLE_COLOR);
+            g2d.setStroke(new BasicStroke(2));
+            g2d.drawRoundRect(x, y, w, h, 10, 10);
+        } else if (active) {
+            g2d.setColor(new Color(255, 220, 150));
+            g2d.setStroke(new BasicStroke(1));
+            g2d.drawRoundRect(x, y, w, h, 10, 10);
+        }
+
+        g2d.setFont(buttonFont.deriveFont(13f));
+        g2d.setColor(active ? BUTTON_TEXT_HOVER : BUTTON_TEXT_NORMAL);
         int tw = g2d.getFontMetrics().stringWidth(text);
-        g2d.drawString(text, x + w / 2 - tw / 2, y + h / 2 + 5);
+        g2d.drawString(text, x + w / 2 - tw / 2, y + h / 2 + 6);
+
+        g2d.setStroke(new BasicStroke(1));
     }
 
     // ==================== HUD ====================
 
     private void drawHUD() {
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 18f));
-
-        // Score
+        // Điểm số
+        g2d.setFont(buttonFont.deriveFont(16f));
         g2d.setColor(Color.WHITE);
-        g2d.drawString("SCORE", 10, 20);
-        g2d.setColor(GOLD_BRIGHT);
-        g2d.drawString(String.format("%06d", gp.score), 10, 42);
+        g2d.drawString("SCORE", 10, 25);
+        g2d.setFont(titleFont.deriveFont(24f));
+        g2d.setColor(SCORE_COLOR);
+        g2d.drawString(String.format("%06d", gp.score), 10, 55);
 
-        // Level
+        // Cấp độ
+        g2d.setFont(buttonFont.deriveFont(14f));
         g2d.setColor(Color.WHITE);
         String lvl = "LEVEL " + gp.level;
-        g2d.drawString(lvl, centerX(lvl), 20);
+        g2d.drawString(lvl, gp.screenWidth - 100, 25);
 
-        // Mode indicator
+        // Chế độ 2 người chơi
         if (gp.twoPlayerMode) {
-            g2d.setColor(GHOST_CYAN);
-            g2d.setFont(gameFont.deriveFont(12f));
-            g2d.drawString("2 PLAYERS", gp.screenWidth - 100, 20);
+            g2d.setColor(GHOST_RED);
+            g2d.setFont(smallFont.deriveFont(Font.BOLD, 10f));
+            g2d.drawString("2P", gp.screenWidth - 50, 45);
         }
 
-        // Difficulty
+        // Độ khó
         String[] dNames = {"EASY", "NORMAL", "HARD"};
-        g2d.setFont(gameFont.deriveFont(12f));
-        g2d.setColor(new Color(180, 180, 180));
-        g2d.drawString(dNames[gp.difficulty], gp.screenWidth - 70, 42);
+        g2d.setFont(smallFont);
+        g2d.setColor(new Color(150, 150, 180));
+        g2d.drawString(dNames[gp.difficulty], gp.screenWidth - 60, 65);
 
-        // Lives
-        int livesY = gp.screenHeight - 24;
+        // Mạng sống (icon mèo)
+        int livesY = gp.screenHeight - 30;
         for (int i = 0; i < gp.lives - 1; i++) {
-            g2d.setColor(CAT_ORANGE);
-            g2d.fillArc(10 + i * 28, livesY, 20, 20, 30, 300);
+            drawCatIcon(10 + i * 30, livesY, 22);
         }
 
-        // Dots remaining
-        g2d.setFont(gameFont.deriveFont(14f));
+        // Số chấm còn lại
+        g2d.setFont(buttonFont.deriveFont(12f));
         g2d.setColor(Color.WHITE);
         String dt = "DOTS: " + gp.dotsRemaining;
-        g2d.drawString(dt, gp.screenWidth - g2d.getFontMetrics().stringWidth(dt) - 10,
-                gp.screenHeight - 8);
+        g2d.drawString(dt, gp.screenWidth - 80, gp.screenHeight - 18);
+
+        // THÊM DÒNG NÀY VÀO CUỐI METHOD drawHUD()
+        drawSoundButtonsHUD();  // Gọi vẽ nút âm thanh trên HUD
+    }
+
+    /**
+     * Vẽ nút âm thanh trên HUD (trong khi chơi game) - THÊM METHOD NÀY
+     */
+    private void drawSoundButtonsHUD() {
+        int btnSize = 25;
+        int x = gp.screenWidth - 65;
+        int y = gp.screenHeight - 32;
+
+        // Nút Music
+        g2d.setColor(gp.musicOn ? BUTTON_HOVER : BUTTON_NORMAL);
+        g2d.fillRoundRect(x, y, btnSize, btnSize, 6, 6);
+        g2d.setColor(gp.musicOn ? BUTTON_TEXT_HOVER : BUTTON_TEXT_NORMAL);
+        g2d.setFont(smallFont.deriveFont(Font.BOLD, 11f));
+        g2d.drawString("♪", x + 7, y + 18);
+
+        // Nút SFX - Tự vẽ hình loa nhỏ
+        g2d.setColor(gp.sfxOn ? BUTTON_HOVER : BUTTON_NORMAL);
+        g2d.fillRoundRect(x + 30, y, btnSize, btnSize, 6, 6);
+
+        // Vẽ hình loa nhỏ (dùng lại method drawSpeakerIcon đã có)
+        drawSpeakerIcon(x + 42, y + 12, 10, gp.sfxOn);
+    }
+
+    private void drawCatIcon(int x, int y, int size) {
+        g2d.setColor(CAT_ORANGE);
+        g2d.fillArc(x, y, size, size, 30, 300);
+        g2d.setColor(Color.BLACK);
+        g2d.fillOval(x + size / 3, y + size / 3, 2, 2);
     }
 
     // ==================== GAME SCREENS ====================
 
     private void drawReady() {
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 24f));
-        g2d.setColor(GOLD_BRIGHT);
+        drawOverlay();
+        g2d.setFont(titleFont.deriveFont(30f));
+        g2d.setColor(TITLE_COLOR);
         String txt = "READY!";
-        int x = gp.mapOffsetX + (gp.maxScreenCol * gp.tileSize) / 2
-                - g2d.getFontMetrics().stringWidth(txt) / 2;
-        g2d.drawString(txt, x, gp.mapOffsetY + 14 * gp.tileSize + gp.tileSize / 2 + 8);
+        g2d.drawString(txt, centerX(txt), gp.screenHeight / 2);
     }
 
     private void drawPause() {
-        // Overlay
-        g2d.setColor(new Color(0, 0, 0, 160));
-        g2d.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
+        drawOverlay();
 
-        // Cat character top-right
-        drawCatCharacter(gp.screenWidth - 130, 60, 100);
-
-        // Title
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 42f));
-        g2d.setColor(GOLD_BRIGHT);
-        String title = "Pause";
+        g2d.setFont(titleFont.deriveFont(40f));
+        g2d.setColor(TITLE_COLOR);
+        String title = "PAUSE";
         g2d.drawString(title, centerX(title), 150);
 
-        // Buttons
-        int btnW = 220, btnH = 44;
+        int btnW = 200, btnH = 45;
         int btnX = gp.screenWidth / 2 - btnW / 2;
         String[] labels = {"CONTINUE", "RESTART", "MENU"};
         for (int i = 0; i < 3; i++) {
-            drawButton(btnX, 320 + i * 60, btnW, btnH, labels[i], commandNumber == i);
+            drawButton(btnX, 280 + i * 60, btnW, btnH, labels[i], commandNumber == i);
         }
+
+        // Nút âm thanh ở góc phải dưới
+        drawSoundButtons(gp.screenWidth - 100, gp.screenHeight - 70);
     }
 
     private void drawGameOver() {
-        g2d.setColor(new Color(0, 0, 0, 180));
-        g2d.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
+        drawOverlay();
 
-        // Title
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 44f));
+        g2d.setFont(titleFont.deriveFont(40f));
         String title;
         if (gp.twoPlayerMode) {
             title = "GHOST WINS!";
@@ -338,178 +480,223 @@ public class UI {
             title = "GAME OVER";
             g2d.setColor(GHOST_RED);
         }
-        g2d.drawString(title, centerX(title), gp.screenHeight / 2 - 80);
+        g2d.drawString(title, centerX(title), 150);
 
-        // Score
-        g2d.setFont(gameFont.deriveFont(22f));
+        g2d.setFont(buttonFont.deriveFont(22f));
         g2d.setColor(Color.WHITE);
         String sc = "SCORE: " + gp.score;
-        g2d.drawString(sc, centerX(sc), gp.screenHeight / 2 - 30);
+        g2d.drawString(sc, centerX(sc), 220);
 
-        // Buttons
-        int btnW = 220, btnH = 44;
+        int btnW = 200, btnH = 45;
         int btnX = gp.screenWidth / 2 - btnW / 2;
-        drawButton(btnX, gp.screenHeight / 2 + 20, btnW, btnH, "RESTART", commandNumber == 0);
-        drawButton(btnX, gp.screenHeight / 2 + 80, btnW, btnH, "MENU", commandNumber == 1);
+        drawButton(btnX, 300, btnW, btnH, "RESTART", commandNumber == 0);
+        drawButton(btnX, 370, btnW, btnH, "MENU", commandNumber == 1);
+
+        // Nút âm thanh ở góc phải dưới
+        drawSoundButtons(gp.screenWidth - 100, gp.screenHeight - 70);
     }
 
     private void drawWin() {
-        g2d.setColor(new Color(0, 0, 0, 150));
-        g2d.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
+        drawOverlay();
 
-        // Cat character
-        drawCatCharacter(gp.screenWidth - 150, 80, 110);
-
-        // Title
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 36f));
+        g2d.setFont(titleFont.deriveFont(40f));
         String title;
         if (gp.twoPlayerMode) {
             title = "CAT WINS!";
             g2d.setColor(CAT_ORANGE);
         } else {
-            title = "Level Complete";
-            g2d.setColor(GOLD_BRIGHT);
+            title = "LEVEL COMPLETE!";
+            g2d.setColor(TITLE_COLOR);
         }
-        g2d.drawString(title, centerX(title), gp.screenHeight / 2 - 80);
+        g2d.drawString(title, centerX(title), 150);
 
-        // Score
-        g2d.setFont(gameFont.deriveFont(22f));
+        g2d.setFont(buttonFont.deriveFont(22f));
         g2d.setColor(Color.WHITE);
         String sc = "SCORE: " + gp.score;
-        g2d.drawString(sc, centerX(sc), gp.screenHeight / 2 - 30);
+        g2d.drawString(sc, centerX(sc), 220);
 
-        // Buttons
-        int btnW = 220, btnH = 44;
+        int btnW = 200, btnH = 45;
         int btnX = gp.screenWidth / 2 - btnW / 2;
         String btn1 = gp.twoPlayerMode ? "PLAY AGAIN" : "NEXT LEVEL";
-        drawButton(btnX, gp.screenHeight / 2 + 20, btnW, btnH, btn1, commandNumber == 0);
-        drawButton(btnX, gp.screenHeight / 2 + 80, btnW, btnH, "MENU", commandNumber == 1);
+        drawButton(btnX, 300, btnW, btnH, btn1, commandNumber == 0);
+        drawButton(btnX, 370, btnW, btnH, "MENU", commandNumber == 1);
+
+        // Nút âm thanh ở góc phải dưới
+        drawSoundButtons(gp.screenWidth - 100, gp.screenHeight - 70);
+    }
+
+    private void drawOverlay() {
+        g2d.setColor(PANEL_BG);
+        g2d.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
     }
 
     // ==================== COMMON DRAWING ====================
 
+    /**
+     * Vẽ nút bấm chính
+     * @param x - tọa độ x
+     * @param y - tọa độ y
+     * @param w - chiều rộng
+     * @param h - chiều cao
+     * @param text - nội dung text
+     * @param selected - trạng thái được chọn hay không
+     */
     private void drawButton(int x, int y, int w, int h, String text, boolean selected) {
-        Color bg = selected ? BUTTON_SEL : BUTTON_BG;
-        // Shadow
-        g2d.setColor(new Color(0, 0, 0, 60));
-        g2d.fillRoundRect(x + 3, y + 3, w, h, 20, 20);
-        // Background
+        // Đổ bóng cho nút
+        g2d.setColor(new Color(0, 0, 0, 100));
+        g2d.fillRoundRect(x + 3, y + 3, w, h, 25, 25);
+
+        // Nền nút
+        Color bg = selected ? BUTTON_HOVER : BUTTON_NORMAL;
         g2d.setColor(bg);
-        g2d.fillRoundRect(x, y, w, h, 20, 20);
-        // Border
+        g2d.fillRoundRect(x, y, w, h, 25, 25);
+
+        // Viền nếu được chọn
         if (selected) {
-            g2d.setColor(GOLD_BRIGHT);
+            g2d.setColor(TITLE_COLOR);
             g2d.setStroke(new BasicStroke(2));
-            g2d.drawRoundRect(x, y, w, h, 20, 20);
-            g2d.setStroke(new BasicStroke(1));
+            g2d.drawRoundRect(x, y, w, h, 25, 25);
+
+            // Mũi tên chỉ chọn (tam giác màu đen)
+            g2d.setColor(BUTTON_TEXT_HOVER);
+            int[] arrowX = {x + 12, x + 18, x + 12};
+            int[] arrowY = {y + h / 2 - 5, y + h / 2, y + h / 2 + 5};
+            g2d.fillPolygon(arrowX, arrowY, 3);
         }
-        // Text
-        g2d.setFont(gameFont.deriveFont(Font.BOLD, 20f));
-        g2d.setColor(BUTTON_TEXT);
+
+        // Text trên nút
+        g2d.setFont(buttonFont);
+        g2d.setColor(selected ? BUTTON_TEXT_HOVER : BUTTON_TEXT_NORMAL);
         int tw = g2d.getFontMetrics().stringWidth(text);
         g2d.drawString(text, x + w / 2 - tw / 2, y + h / 2 + 7);
 
-        // Selection arrow
-        if (selected) {
-            g2d.setColor(BUTTON_TEXT);
-            g2d.drawString("\u25B6", x + 10, y + h / 2 + 7);
-        }
+        g2d.setStroke(new BasicStroke(1));
     }
 
+    /**
+     * Vẽ khung panel bo tròn
+     * @param x - tọa độ x
+     * @param y - tọa độ y
+     * @param w - chiều rộng
+     * @param h - chiều cao
+     */
     private void drawPanel(int x, int y, int w, int h) {
         g2d.setColor(PANEL_BG);
         g2d.fillRoundRect(x, y, w, h, 20, 20);
-        g2d.setColor(PANEL_BORDER);
+        g2d.setColor(new Color(255, 220, 100, 80));
         g2d.setStroke(new BasicStroke(2));
         g2d.drawRoundRect(x, y, w, h, 20, 20);
         g2d.setStroke(new BasicStroke(1));
     }
 
+    /**
+     * Vẽ sprite ghost
+     * @param x - tọa độ x
+     * @param y - tọa độ y
+     * @param size - kích thước
+     * @param color - màu sắc
+     */
     private void drawGhostSprite(int x, int y, int size, Color color) {
+        // Thân ghost
         g2d.setColor(color);
         g2d.fillArc(x, y, size, size, 0, 180);
         g2d.fillRect(x, y + size / 2, size, size / 2);
 
-        // Skirt
-        int ww = size / 3;
-        g2d.setColor(BG_DARK);
+        // Đuôi lượn sóng
+        int waveW = size / 3;
+        int waveY = y + size - 4;
+        g2d.setColor(BG_GRADIENT_BOTTOM);
         for (int i = 0; i < 3; i++) {
-            g2d.fillArc(x + i * ww, y + size - 5, ww, 8, 0, 180);
+            g2d.fillArc(x + i * waveW, waveY, waveW, 6, 0, 180);
         }
 
-        // Eyes
-        int ew = size / 4, eh = size / 3;
-        int lx = x + size / 4 - ew / 2;
-        int rx = x + 3 * size / 4 - ew / 2;
+        // Mắt
+        int eyeW = size / 4, eyeH = size / 3;
+        int lx = x + size / 4 - eyeW / 2;
+        int rx = x + 3 * size / 4 - eyeW / 2;
         int ey = y + size / 4;
         g2d.setColor(Color.WHITE);
-        g2d.fillOval(lx, ey, ew, eh);
-        g2d.fillOval(rx, ey, ew, eh);
-        int ps = ew / 2 + 1;
-        g2d.setColor(new Color(33, 33, 255));
-        g2d.fillOval(lx + ew / 2 - ps / 2 + 1, ey + eh / 2 - ps / 2, ps, ps);
-        g2d.fillOval(rx + ew / 2 - ps / 2 + 1, ey + eh / 2 - ps / 2, ps, ps);
+        g2d.fillOval(lx, ey, eyeW, eyeH);
+        g2d.fillOval(rx, ey, eyeW, eyeH);
+
+        // Đồng tử
+        int ps = eyeW / 2;
+        g2d.setColor(new Color(33, 33, 150));
+        g2d.fillOval(lx + eyeW / 2 - ps / 2 + 1, ey + eyeH / 2 - ps / 2, ps, ps);
+        g2d.fillOval(rx + eyeW / 2 - ps / 2 + 1, ey + eyeH / 2 - ps / 2, ps, ps);
     }
 
+    /**
+     * Vẽ nhân vật mèo CatWomen
+     * @param x - tọa độ x
+     * @param y - tọa độ y
+     * @param size - kích thước
+     */
     private void drawCatCharacter(int x, int y, int size) {
-        // Body
+        // Thân
         g2d.setColor(CAT_ORANGE);
         g2d.fillOval(x + size / 6, y + size / 3, size * 2 / 3, size * 2 / 3);
 
-        // Head
+        // Đầu
         int hw = size / 2, hh = size / 2;
         int hx = x + size / 4, hy = y + size / 6;
         g2d.fillOval(hx, hy, hw, hh);
 
-        // Ears
+        // Tai
         int earW = hw / 3;
-        g2d.fillPolygon(
-            new int[]{hx + 2, hx + earW, hx + earW * 2},
-            new int[]{hy + hh / 4, hy - earW, hy + hh / 4}, 3);
-        g2d.fillPolygon(
-            new int[]{hx + hw - earW * 2, hx + hw - earW, hx + hw - 2},
-            new int[]{hy + hh / 4, hy - earW, hy + hh / 4}, 3);
+        int[] earX1 = {hx + 4, hx + earW, hx + earW * 2 - 4};
+        int[] earY1 = {hy + hh / 4, hy - earW + 6, hy + hh / 4};
+        g2d.fillPolygon(earX1, earY1, 3);
 
-        // Inner ears
+        int[] earX2 = {hx + hw - earW * 2 + 4, hx + hw - earW, hx + hw - 4};
+        int[] earY2 = {hy + hh / 4, hy - earW + 6, hy + hh / 4};
+        g2d.fillPolygon(earX2, earY2, 3);
+
+        // Tai trong (màu hồng)
         g2d.setColor(new Color(255, 192, 203));
-        int ie = earW / 2;
-        g2d.fillPolygon(
-            new int[]{hx + 5, hx + earW, hx + earW * 2 - 3},
-            new int[]{hy + hh / 4 - 2, hy - earW + 5, hy + hh / 4 - 2}, 3);
-        g2d.fillPolygon(
-            new int[]{hx + hw - earW * 2 + 3, hx + hw - earW, hx + hw - 5},
-            new int[]{hy + hh / 4 - 2, hy - earW + 5, hy + hh / 4 - 2}, 3);
+        int[] innerX1 = {hx + 7, hx + earW, hx + earW * 2 - 7};
+        int[] innerY1 = {hy + hh / 4 - 2, hy - earW + 10, hy + hh / 4 - 2};
+        g2d.fillPolygon(innerX1, innerY1, 3);
 
-        // Belly
+        int[] innerX2 = {hx + hw - earW * 2 + 7, hx + hw - earW, hx + hw - 7};
+        int[] innerY2 = {hy + hh / 4 - 2, hy - earW + 10, hy + hh / 4 - 2};
+        g2d.fillPolygon(innerX2, innerY2, 3);
+
+        // Bụng
         g2d.setColor(new Color(255, 230, 200));
         g2d.fillOval(x + size / 3, y + size / 2, size / 3, size / 3);
 
-        // Eyes
+        // Mắt
         g2d.setColor(Color.BLACK);
         g2d.fillOval(hx + hw / 3 - 3, hy + hh / 3, 5, 6);
         g2d.fillOval(hx + 2 * hw / 3 - 2, hy + hh / 3, 5, 6);
 
-        // Eye shine
+        // Ánh mắt
         g2d.setColor(Color.WHITE);
         g2d.fillOval(hx + hw / 3 - 2, hy + hh / 3 + 1, 2, 2);
         g2d.fillOval(hx + 2 * hw / 3 - 1, hy + hh / 3 + 1, 2, 2);
 
-        // Nose
-        g2d.setColor(new Color(255, 120, 120));
-        g2d.fillOval(hx + hw / 2 - 2, hy + hh / 2 + 2, 4, 3);
+        // Mũi
+        g2d.setColor(new Color(255, 100, 100));
+        g2d.fillOval(hx + hw / 2 - 2, hy + hh / 2 + 2, 3, 2);
 
-        // Whiskers
+        // Râu
         g2d.setColor(new Color(80, 60, 40));
         g2d.setStroke(new BasicStroke(1));
         int wx = hx + hw / 2, wy = hy + hh / 2 + 5;
-        g2d.drawLine(wx - 3, wy, wx - hw / 2 - 5, wy - 3);
-        g2d.drawLine(wx - 3, wy + 2, wx - hw / 2 - 5, wy + 4);
-        g2d.drawLine(wx + 3, wy, wx + hw / 2 + 5, wy - 3);
-        g2d.drawLine(wx + 3, wy + 2, wx + hw / 2 + 5, wy + 4);
+        g2d.drawLine(wx - 3, wy, wx - hw / 2 - 6, wy - 3);
+        g2d.drawLine(wx - 3, wy + 1, wx - hw / 2 - 6, wy + 4);
+        g2d.drawLine(wx + 3, wy, wx + hw / 2 + 6, wy - 3);
+        g2d.drawLine(wx + 3, wy + 1, wx + hw / 2 + 6, wy + 4);
     }
 
+    /**
+     * Tính toán tọa độ X để căn giữa text
+     * @param text - nội dung text cần căn giữa
+     * @return tọa độ X
+     */
     private int centerX(String text) {
-        int w = (int) g2d.getFontMetrics().getStringBounds(text, g2d).getWidth();
+        int w = g2d.getFontMetrics().stringWidth(text);
         return gp.screenWidth / 2 - w / 2;
     }
 }

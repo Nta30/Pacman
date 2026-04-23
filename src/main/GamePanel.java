@@ -54,13 +54,32 @@ public class GamePanel extends JPanel implements Runnable {
     public int difficulty = 1;         // 0=easy, 1=normal, 2=hard
     public int ghostBaseSpeed = 3;
 
+    // Map selection - ĐÚNG VỚI FILE MAP CỦA BẠN
+    public int selectedMap = 1;         // 1-6
+    public String[] mapNames = {
+            "CLASSIC",
+            "MAP 01",
+            "WORLD 01",
+            "WORLD 02",
+            "WORLD 03",
+            "INTERIOR 01"
+    };
+    public String[] mapPaths = {
+            "/map/pacman_classic",
+            "/map/map01",
+            "/map/world01",
+            "/map/worldV2",
+            "/map/worldV3",
+            "/map/interior01"
+    };
+
     // Power pellet
     public boolean powerPelletActive = false;
     public int frightTimer = 0;
     public int frightDuration = 360;
 
     // Ghost mode cycling
-    public int ghostMode = 0; // 0=scatter, 1=chase
+    public int ghostMode = 0;
     public int modeTimer = 0;
     public int modePhase = 0;
     public int[] scatterDurations = {420, 420, 300, 300};
@@ -73,6 +92,10 @@ public class GamePanel extends JPanel implements Runnable {
     private boolean deathPause = false;
     private int ghostEatMultiplier = 1;
     public int winTimer = 0;
+
+    // Sound settings
+    public boolean musicOn = true;
+    public boolean sfxOn = true;
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -88,15 +111,15 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void applyDifficulty() {
         switch (difficulty) {
-            case 0: // EASY
+            case 0:
                 ghostBaseSpeed = 2;
                 frightDuration = 480;
                 break;
-            case 1: // NORMAL
+            case 1:
                 ghostBaseSpeed = 3;
                 frightDuration = 360;
                 break;
-            case 2: // HARD
+            case 2:
                 ghostBaseSpeed = 3;
                 frightDuration = 240;
                 scatterDurations = new int[]{300, 300, 240, 240};
@@ -105,7 +128,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void setupLevel() {
-        tileManager.loadMap("/map/pacman_classic");
+        tileManager.loadMap(mapPaths[selectedMap - 1]);
         dotsRemaining = tileManager.countDots();
         totalDots = dotsRemaining;
 
@@ -116,7 +139,6 @@ public class GamePanel extends JPanel implements Runnable {
         ghosts[2] = new Inky(this);
         ghosts[3] = new Clyde(this);
 
-        // 2P mode: Player 2 controls Blinky
         if (twoPlayerMode) {
             ghosts[0].isPlayerControlled = true;
         }
@@ -189,7 +211,6 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void updatePlay() {
-        // Death pause
         if (deathPause) {
             deathPauseTimer++;
             if (deathPauseTimer >= 90) {
@@ -212,7 +233,6 @@ public class GamePanel extends JPanel implements Runnable {
 
         checkGhostCollisions();
 
-        // Update fright timer
         if (powerPelletActive) {
             frightTimer--;
             if (frightTimer <= 0) {
@@ -226,7 +246,6 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        // Win check
         if (dotsRemaining <= 0) {
             gameState = winState;
             winTimer = 0;
@@ -272,13 +291,13 @@ public class GamePanel extends JPanel implements Runnable {
             tileManager.mapTileNumber[col][row] = 5;
             score += 10;
             dotsRemaining--;
-            sound.playSE(1);
+            if (sfxOn) sound.playSE(1);
         } else if (type == 3) {
             tileManager.mapTileNumber[col][row] = 5;
             score += 50;
             dotsRemaining--;
             activatePowerPellet();
-            sound.playSE(2);
+            if (sfxOn) sound.playSE(2);
         }
     }
 
@@ -307,7 +326,7 @@ public class GamePanel extends JPanel implements Runnable {
                     g.setState(Ghost.EATEN);
                     score += 200 * ghostEatMultiplier;
                     ghostEatMultiplier *= 2;
-                    sound.playSE(3);
+                    if (sfxOn) sound.playSE(3);
                 } else if (g.state == Ghost.SCATTER || g.state == Ghost.CHASE) {
                     pacmanDeath();
                     return;
@@ -318,7 +337,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void pacmanDeath() {
         lives--;
-        sound.playSE(4);
+        if (sfxOn) sound.playSE(4);
 
         if (lives <= 0) {
             gameState = gameOverState;
@@ -350,6 +369,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void playMusic(int i) {
+        if (!musicOn) return;
         sound.setFile(i);
         sound.play();
         sound.loop();
