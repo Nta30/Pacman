@@ -234,7 +234,7 @@ public class UI {
         // Hướng dẫn điều khiển
         g2d.setFont(smallFont);
         g2d.setColor(new Color(150, 150, 180));
-        String hint = "↑/↓: Select   Enter: Confirm   M: Music   S: SFX";
+        String hint = "↑/↓: Select   Enter: Confirm   K: Music   L: SFX";
         g2d.drawString(hint, centerX(hint), gp.screenHeight - 30);
     }
 
