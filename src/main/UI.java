@@ -1,6 +1,9 @@
 package main;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 public class UI {
 
@@ -8,11 +11,15 @@ public class UI {
     Graphics2D g2d;
     Font titleFont;
     Font buttonFont;
-    Font smallFont;
+    public Font smallFont;
     public int commandNumber = 0;
     public int settingRow = 0;
     public int settingButtonPos = 0;
     public boolean showInstructions = false;
+
+    // Title screen images
+    BufferedImage imgGhostRed, imgGhostPink, imgGhostBlue, imgGhostOrange;
+    BufferedImage imgPacman, imgPacmanLarge;
 
     // Colors
     static final Color BG_GRADIENT_TOP = new Color(20, 20, 60);
@@ -33,9 +40,37 @@ public class UI {
 
     public UI(GamePanel gp) {
         this.gp = gp;
-        titleFont = new Font("Arial", Font.BOLD, 42);
-        buttonFont = new Font("Arial", Font.BOLD, 18);
-        smallFont = new Font("Arial", Font.PLAIN, 12);
+        loadCustomFont();
+        loadTitleImages();
+    }
+
+    private void loadCustomFont() {
+        try {
+            Font maruMonica = Font.createFont(Font.TRUETYPE_FONT,
+                    getClass().getResourceAsStream("/font/x12y16pxMaruMonica.ttf"));
+            GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(maruMonica);
+            titleFont = maruMonica.deriveFont(Font.BOLD, 42f);
+            buttonFont = maruMonica.deriveFont(Font.BOLD, 18f);
+            smallFont = maruMonica.deriveFont(Font.PLAIN, 12f);
+        } catch (Exception e) {
+            System.err.println("Warning: Could not load MaruMonica font, using Arial: " + e.getMessage());
+            titleFont = new Font("Arial", Font.BOLD, 42);
+            buttonFont = new Font("Arial", Font.BOLD, 18);
+            smallFont = new Font("Arial", Font.PLAIN, 12);
+        }
+    }
+
+    private void loadTitleImages() {
+        try {
+            imgGhostRed    = ImageIO.read(getClass().getResourceAsStream("/UI/3d-pixel-ghost-red-512x512.png"));
+            imgGhostPink   = ImageIO.read(getClass().getResourceAsStream("/UI/3d-pixel-ghost-pink-128x128.png"));
+            imgGhostBlue   = ImageIO.read(getClass().getResourceAsStream("/UI/3d-pixel-ghost-blue-128x128.png"));
+            imgGhostOrange = ImageIO.read(getClass().getResourceAsStream("/UI/3d-pixel-ghost-orange-128x128.png"));
+            imgPacman      = ImageIO.read(getClass().getResourceAsStream("/UI/3d-pixel-pac-128x128.png"));
+            imgPacmanLarge = ImageIO.read(getClass().getResourceAsStream("/UI/pacman-png-25189.png"));
+        } catch (IOException | IllegalArgumentException e) {
+            System.err.println("Warning: Could not load UI images: " + e.getMessage());
+        }
     }
 
     public void draw(Graphics2D g2d) {
@@ -154,30 +189,32 @@ public class UI {
             return;
         }
 
-        // Title "Pacman" nhỏ phía trên
-        g2d.setFont(smallFont.deriveFont(Font.BOLD, 14f));
-        g2d.setColor(new Color(150, 150, 180));
-        String pacman = "Pacman";
-        g2d.drawString(pacman, centerX(pacman), 50);
-
         // Title "CatWomen" lớn
         g2d.setFont(titleFont);
         g2d.setColor(TITLE_COLOR);
-        String title = "CatWomen";
+        String title = "PACMAN";
         int titleX = centerX(title);
         g2d.setColor(new Color(80, 60, 40));
         g2d.drawString(title, titleX + 3, 105);
         g2d.setColor(TITLE_COLOR);
         g2d.drawString(title, titleX, 100);
 
-        // Ghost sprites bên trái
-        drawGhostSprite(60, 140, 50, GHOST_RED);
-        drawGhostSprite(120, 200, 50, GHOST_PINK);
-        drawGhostSprite(50, 260, 50, GHOST_CYAN);
-        drawGhostSprite(110, 320, 50, GHOST_ORANGE);
+        // Ghost images bên trái
+        int ghostSize = 60;
+        if (imgGhostRed != null)
+            g2d.drawImage(imgGhostRed, 30, 130, ghostSize + 10, ghostSize + 10, null);
+        if (imgGhostPink != null)
+            g2d.drawImage(imgGhostPink, 100, 190, ghostSize, ghostSize, null);
+        if (imgGhostBlue != null)
+            g2d.drawImage(imgGhostBlue, 25, 250, ghostSize, ghostSize, null);
+        if (imgGhostOrange != null)
+            g2d.drawImage(imgGhostOrange, 90, 310, ghostSize, ghostSize, null);
 
-        // Cat character bên phải
-        drawCatCharacter(gp.screenWidth - 150, 150, 110);
+        // Pacman image bên phải
+        if (imgPacmanLarge != null)
+            g2d.drawImage(imgPacmanLarge, gp.screenWidth - 160, 140, 130, 130, null);
+        if (imgPacman != null)
+            g2d.drawImage(imgPacman, gp.screenWidth - 120, 280, 70, 70, null);
 
         // Các nút chính
         int btnW = 220, btnH = 45;
@@ -589,106 +626,7 @@ public class UI {
         g2d.setStroke(new BasicStroke(1));
     }
 
-    /**
-     * Vẽ sprite ghost
-     * @param x - tọa độ x
-     * @param y - tọa độ y
-     * @param size - kích thước
-     * @param color - màu sắc
-     */
-    private void drawGhostSprite(int x, int y, int size, Color color) {
-        // Thân ghost
-        g2d.setColor(color);
-        g2d.fillArc(x, y, size, size, 0, 180);
-        g2d.fillRect(x, y + size / 2, size, size / 2);
-
-        // Đuôi lượn sóng
-        int waveW = size / 3;
-        int waveY = y + size - 4;
-        g2d.setColor(BG_GRADIENT_BOTTOM);
-        for (int i = 0; i < 3; i++) {
-            g2d.fillArc(x + i * waveW, waveY, waveW, 6, 0, 180);
-        }
-
-        // Mắt
-        int eyeW = size / 4, eyeH = size / 3;
-        int lx = x + size / 4 - eyeW / 2;
-        int rx = x + 3 * size / 4 - eyeW / 2;
-        int ey = y + size / 4;
-        g2d.setColor(Color.WHITE);
-        g2d.fillOval(lx, ey, eyeW, eyeH);
-        g2d.fillOval(rx, ey, eyeW, eyeH);
-
-        // Đồng tử
-        int ps = eyeW / 2;
-        g2d.setColor(new Color(33, 33, 150));
-        g2d.fillOval(lx + eyeW / 2 - ps / 2 + 1, ey + eyeH / 2 - ps / 2, ps, ps);
-        g2d.fillOval(rx + eyeW / 2 - ps / 2 + 1, ey + eyeH / 2 - ps / 2, ps, ps);
-    }
-
-    /**
-     * Vẽ nhân vật mèo CatWomen
-     * @param x - tọa độ x
-     * @param y - tọa độ y
-     * @param size - kích thước
-     */
-    private void drawCatCharacter(int x, int y, int size) {
-        // Thân
-        g2d.setColor(CAT_ORANGE);
-        g2d.fillOval(x + size / 6, y + size / 3, size * 2 / 3, size * 2 / 3);
-
-        // Đầu
-        int hw = size / 2, hh = size / 2;
-        int hx = x + size / 4, hy = y + size / 6;
-        g2d.fillOval(hx, hy, hw, hh);
-
-        // Tai
-        int earW = hw / 3;
-        int[] earX1 = {hx + 4, hx + earW, hx + earW * 2 - 4};
-        int[] earY1 = {hy + hh / 4, hy - earW + 6, hy + hh / 4};
-        g2d.fillPolygon(earX1, earY1, 3);
-
-        int[] earX2 = {hx + hw - earW * 2 + 4, hx + hw - earW, hx + hw - 4};
-        int[] earY2 = {hy + hh / 4, hy - earW + 6, hy + hh / 4};
-        g2d.fillPolygon(earX2, earY2, 3);
-
-        // Tai trong (màu hồng)
-        g2d.setColor(new Color(255, 192, 203));
-        int[] innerX1 = {hx + 7, hx + earW, hx + earW * 2 - 7};
-        int[] innerY1 = {hy + hh / 4 - 2, hy - earW + 10, hy + hh / 4 - 2};
-        g2d.fillPolygon(innerX1, innerY1, 3);
-
-        int[] innerX2 = {hx + hw - earW * 2 + 7, hx + hw - earW, hx + hw - 7};
-        int[] innerY2 = {hy + hh / 4 - 2, hy - earW + 10, hy + hh / 4 - 2};
-        g2d.fillPolygon(innerX2, innerY2, 3);
-
-        // Bụng
-        g2d.setColor(new Color(255, 230, 200));
-        g2d.fillOval(x + size / 3, y + size / 2, size / 3, size / 3);
-
-        // Mắt
-        g2d.setColor(Color.BLACK);
-        g2d.fillOval(hx + hw / 3 - 3, hy + hh / 3, 5, 6);
-        g2d.fillOval(hx + 2 * hw / 3 - 2, hy + hh / 3, 5, 6);
-
-        // Ánh mắt
-        g2d.setColor(Color.WHITE);
-        g2d.fillOval(hx + hw / 3 - 2, hy + hh / 3 + 1, 2, 2);
-        g2d.fillOval(hx + 2 * hw / 3 - 1, hy + hh / 3 + 1, 2, 2);
-
-        // Mũi
-        g2d.setColor(new Color(255, 100, 100));
-        g2d.fillOval(hx + hw / 2 - 2, hy + hh / 2 + 2, 3, 2);
-
-        // Râu
-        g2d.setColor(new Color(80, 60, 40));
-        g2d.setStroke(new BasicStroke(1));
-        int wx = hx + hw / 2, wy = hy + hh / 2 + 5;
-        g2d.drawLine(wx - 3, wy, wx - hw / 2 - 6, wy - 3);
-        g2d.drawLine(wx - 3, wy + 1, wx - hw / 2 - 6, wy + 4);
-        g2d.drawLine(wx + 3, wy, wx + hw / 2 + 6, wy - 3);
-        g2d.drawLine(wx + 3, wy + 1, wx + hw / 2 + 6, wy + 4);
-    }
+    // drawGhostSprite và drawCatCharacter đã được thay thế bằng ảnh PNG từ res/UI/
 
     /**
      * Tính toán tọa độ X để căn giữa text

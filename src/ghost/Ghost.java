@@ -291,7 +291,7 @@ public class Ghost extends Entity {
         // Player indicator (2P mode)
         if (isPlayerControlled && state != FRIGHTENED) {
             g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("Arial", Font.BOLD, 8));
+            g2d.setFont(gp.ui.smallFont.deriveFont(Font.BOLD, 8f));
             g2d.drawString("P2", drawX + ts / 2 - 6, drawY - 2);
         }
     }

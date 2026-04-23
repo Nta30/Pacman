@@ -189,7 +189,7 @@ public class Player extends Entity {
         // P1 indicator in 2P mode
         if (gp.twoPlayerMode) {
             g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("Arial", Font.BOLD, 8));
+            g2d.setFont(gp.ui.smallFont.deriveFont(Font.BOLD, 8f));
             g2d.drawString("P1", drawX + gp.tileSize / 2 - 6, drawY - 2);
         }
     }
